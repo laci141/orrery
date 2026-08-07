@@ -79,12 +79,15 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border:none;border-ra
 body.uiHidden #panel,body.uiHidden #readout,body.uiHidden #restoreBtn,body.uiHidden #hint{display:none}
 #pullTab{display:none;width:44px;height:14px;border-radius:7px;background:rgba(255,255,255,.3);margin:8px auto 2px;cursor:pointer;background-clip:content-box;padding:4px 0}
 @media (max-width:700px){
-  #panel{top:auto;right:0;left:0;bottom:0;width:100%;max-height:55vh;border-radius:18px 18px 0 0;transform:translateY(calc(100% - 40px))}
+  #panel{top:auto;right:4px;left:4px;bottom:4px;width:auto;max-height:60vh;border-radius:16px;transform:translateY(calc(100% - 40px))}
   #panel.open{transform:translateY(0)}
   #panel.min{opacity:1;pointer-events:auto;transform:translateY(calc(100% - 40px))}
   #pullTab{display:block}
   #restoreBtn{display:none!important}
   #hint{display:none}
+  #readout{left:4px;top:4px;right:auto;bottom:auto}
+  #toast{top:8px;max-width:calc(100vw - 16px)}
+  #info{max-width:190px}
 }
 </style>
 </head>
@@ -1166,9 +1169,12 @@ function syncSliders(){
 }
 /* panel chrome */
 const panel=document.getElementById("panel"),restoreBtn=document.getElementById("restoreBtn");
-document.getElementById("minBtn").addEventListener("click",()=>{panel.classList.add("min");restoreBtn.classList.add("show");});
+document.getElementById("minBtn").addEventListener("click",()=>{
+  if(matchMedia("(max-width:700px)").matches){panel.classList.remove("open");return;}
+  panel.classList.add("min");restoreBtn.classList.add("show");
+});
 restoreBtn.addEventListener("click",()=>{panel.classList.remove("min");restoreBtn.classList.remove("show");});
-document.getElementById("pullTab").addEventListener("click",()=>panel.classList.toggle("open"));
+document.getElementById("pullTab").addEventListener("click",()=>{panel.classList.remove("min");panel.classList.toggle("open");});
 document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{
   document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x===b));
   document.querySelectorAll(".tabPage").forEach(p=>p.classList.toggle("on",p.id==="page-"+b.dataset.tab));
@@ -1246,7 +1252,7 @@ function projectorStep(dt){
 /* ============ AUDIO ============ */
 const audio={on:false,ctxA:null,master:null,vols:{master:70,drone:60,wind:45,chimes:65,shimmer:40},followSim:true,
   nodes:{},lastPeri:{},whoosh:null,tick:null,applyVols:null};
-function toggleSound(){audio.on?disableSound():enableSound();const el=document.getElementById("sndOn");el&&(el.checked=!audio.on?false:true);}
+function toggleSound(){audio.on?disableSound():enableSound();const el=document.getElementById("sndOn");el&&(el.checked=audio.on);}
 function enableSound(){
   if(audio.on)return;audio.on=true;
   if(!audio.ctxA){
@@ -1294,7 +1300,7 @@ function enableSound(){
       const o2=A.createOscillator();o2.type="sine";o2.frequency.value=freq*2.01;
       const g=A.createGain();
       g.gain.setValueAtTime(0,t0);
-      g.gain.linearRampToValueAtTime(vel*(audio.vols.chimes/100)*(audio.vols.master/100)*.25,t0+.01);
+      g.gain.linearRampToValueAtTime(vel*(audio.vols.chimes/100)*.25,t0+.01);
       g.gain.exponentialRampToValueAtTime(.0001,t0+3.2);
       o.connect(g);o2.connect(g);g.connect(master);g.connect(revG);
       o.start(t0);o2.start(t0);o.stop(t0+3.4);o2.stop(t0+3.4);
@@ -1307,7 +1313,7 @@ function enableSound(){
       f.frequency.linearRampToValueAtTime(500,t0+1.6);f.frequency.linearRampToValueAtTime(90,t0+3.6);
       const g=A.createGain();
       g.gain.setValueAtTime(0,t0);
-      g.gain.linearRampToValueAtTime(.2*(audio.vols.master/100),t0+.9);
+      g.gain.linearRampToValueAtTime(.2*(audio.vols.wind/100),t0+.9);
       g.gain.linearRampToValueAtTime(0,t0+3.8);
       src.connect(f);f.connect(g);g.connect(master);g.connect(revG);
       src.start(t0);src.stop(t0+4);
@@ -1321,7 +1327,7 @@ function enableSound(){
       bp.frequency.value=380+Math.sin(wander*.23)*260+(audio.followSim?cam.zoom*40:0);
       /* comet shimmer inside 1.5 AU */
       let sh=0;for(const c of comets)if(c.dist<1.5)sh=Math.max(sh,1-c.dist/1.5);
-      audio.nodes.shG.gain.value=sh*.05*(audio.vols.shimmer/100)*(audio.vols.master/100);
+      audio.nodes.shG.gain.value=sh*.05*(audio.vols.shimmer/100);
       /* orbit chimes at perihelion crossings (pentatonic, pitch ~ orbit size) */
       const scaleP=[0,2,4,7,9];
       const all=[...bodies,pluto];
