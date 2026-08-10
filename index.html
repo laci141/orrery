@@ -272,7 +272,17 @@ const PLUTO={id:"pluto",a:39.48,T:90560,e:0.249,inc:17.1,size:2.2,c1:"#c8b8a8",c
 const POW=0.62;
 let AUS=60; // px per AU^POW at zoom 1 — set in fitScale()
 function fitScale(){const nep=Math.pow(30.07,POW);AUS=(Math.min(W,H)*0.46)/nep;}
-const dispR=a=>Math.pow(a,POW)*AUS;
+/* Inner-system spread: the rocky planets sit 50% further apart so they clear the
+   Sun's glare, easing back to plain compression by Saturn — the outer planets,
+   Pluto and the Kuiper belt keep exactly the positions they had. */
+const SPR_IN=1.30,SPR_OUT=4.05,SPR_F=1.5;
+function spread(u){
+  if(u<=SPR_IN)return SPR_F;
+  if(u>=SPR_OUT)return 1;
+  const t=(u-SPR_IN)/(SPR_OUT-SPR_IN);
+  return SPR_F+(1-SPR_F)*t*t*(3-2*t);
+}
+const dispR=a=>{const u=Math.pow(a,POW);return u*spread(u)*AUS;};
 
 /* per-body runtime state */
 function makeBody(p,rngFn){
