@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Orrery — Keplerian Solar System</title>
 <style>
 :root{
@@ -12,12 +12,17 @@
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:var(--txt)}
 canvas{position:absolute;top:0;left:0;width:100%;height:100%;display:block}
-#bgA,#bgB{z-index:0}#bgB{z-index:1}#scene{z-index:2}
+#bgA,#bgB{z-index:0}#bgB{z-index:1}#scene{z-index:3;touch-action:none}
+/* colour wash behind the glass panels: above the starfield canvases, below #scene (transparent) */
+body::before{content:"";position:fixed;inset:0;z-index:2;pointer-events:none;
+  background:radial-gradient(40vmax 40vmax at 88% 12%,rgba(127,180,255,.22),transparent 70%),
+    radial-gradient(35vmax 35vmax at 12% 92%,rgba(200,110,255,.18),transparent 70%),
+    radial-gradient(30vmax 30vmax at 75% 95%,rgba(255,150,90,.14),transparent 70%)}
 #fadein{position:fixed;inset:0;background:#000;z-index:50;pointer-events:none;transition:opacity 2s ease}
 /* ---------- glass panel ---------- */
 .glass{background:var(--panel-bg);backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px);
   border:1px solid var(--panel-border);border-radius:14px;box-shadow:0 8px 32px rgba(0,0,0,.45)}
-#panel{position:fixed;top:14px;right:14px;width:300px;max-height:calc(100vh - 28px);z-index:10;
+#panel{position:fixed;top:14px;right:14px;width:300px;max-height:calc(100vh - 28px);max-height:calc(100dvh - 28px);z-index:10;
   display:flex;flex-direction:column;transition:opacity .35s ease,transform .35s ease;overflow:hidden}
 #panel.min{opacity:0;transform:translateX(30px);pointer-events:none}
 #panelHead{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--panel-border);flex:0 0 auto}
@@ -25,7 +30,7 @@ canvas{position:absolute;top:0;left:0;width:100%;height:100%;display:block}
 #minBtn{background:none;border:none;color:var(--txt-dim);font-size:16px;cursor:pointer;padding:2px 6px}
 #minBtn:hover{color:#fff}
 #restoreBtn{position:fixed;top:14px;right:14px;width:40px;height:40px;border-radius:50%;z-index:10;
-  display:none;align-items:center;justify-content:center;cursor:pointer;color:var(--accent);font-size:18px;border:1px solid var(--panel-border)}
+  display:none;align-items:center;justify-content:center;cursor:pointer;color:var(--accent);font-size:18px;border:1px solid var(--panel-border);padding:0;font-family:inherit;line-height:1}
 #restoreBtn.show{display:flex}
 #langRow{display:flex;gap:4px;padding:8px 14px 0}
 .langBtn{flex:1;padding:4px 0;font-size:11px;border-radius:7px;border:1px solid var(--panel-border);
@@ -78,16 +83,33 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border:none;border-ra
   color:var(--txt-dim);opacity:0;transition:opacity 1s;pointer-events:none;white-space:nowrap}
 body.uiHidden #panel,body.uiHidden #readout,body.uiHidden #restoreBtn,body.uiHidden #hint{display:none}
 #pullTab{display:none;width:44px;height:14px;border-radius:7px;background:rgba(255,255,255,.3);margin:8px auto 2px;cursor:pointer;background-clip:content-box;padding:4px 0}
+/* keyboard focus */
+button:focus-visible,.tab:focus-visible,.langBtn:focus-visible,.palBtn:focus-visible,.sw input:focus-visible+i{outline:2px solid var(--accent);outline-offset:2px}
 @media (max-width:700px){
-  #panel{top:auto;right:4px;left:4px;bottom:4px;width:auto;max-height:60vh;border-radius:16px;transform:translateY(calc(100% - 40px))}
+  .glass{backdrop-filter:blur(11px);-webkit-backdrop-filter:blur(11px)}
+  #panel{top:auto;right:4px;left:4px;bottom:4px;width:auto;max-height:60vh;max-height:60dvh;border-radius:16px;transform:translateY(calc(100% - 40px))}
   #panel.open{transform:translateY(0)}
   #panel.min{opacity:1;pointer-events:auto;transform:translateY(calc(100% - 40px))}
   #pullTab{display:block}
   #restoreBtn{display:none!important}
   #hint{display:none}
   #readout{left:4px;top:4px;right:auto;bottom:auto}
-  #toast{top:8px;max-width:calc(100vw - 16px)}
+  #toast{top:8px;width:calc(100vw - 16px);max-width:520px;text-align:center}
+  #caption{width:calc(100vw - 16px);max-width:520px}
   #info{max-width:190px}
+  .secT,.langBtn,.palBtn{font-size:12px}
+}
+/* touch targets >= 24px */
+@media (pointer:coarse),(max-width:700px){
+  .langBtn,.tab,.btn,.palBtn{min-height:24px}
+  #minBtn{min-width:24px;min-height:24px}
+  #pullTab{height:24px;padding:9px 0;flex:0 0 auto}
+  input[type=range]{height:24px}
+  input[type=range]::-webkit-slider-thumb{width:22px;height:22px;margin-top:-9px}
+  input[type=range]::-moz-range-thumb{width:22px;height:22px}
+}
+@media (prefers-reduced-motion: reduce){
+  #panel,#toast,#caption,#hint,#fadein,.sw i,.sw i:before{transition:none}
 }
 </style>
 </head>
@@ -96,21 +118,21 @@ body.uiHidden #panel,body.uiHidden #readout,body.uiHidden #restoreBtn,body.uiHid
 <div id="fadein"></div>
 <div id="panel" class="glass">
   <div id="pullTab"></div>
-  <div id="panelHead"><h1>Orrery</h1><button id="minBtn" title="minimise">—</button></div>
+  <div id="panelHead"><h1>Orrery</h1><button id="minBtn" title="minimise" aria-label="Minimise panel">—</button></div>
   <div id="langRow">
     <button class="langBtn on" data-lang="en">EN</button><button class="langBtn" data-lang="hu">HU</button>
     <button class="langBtn" data-lang="ro">RO</button><button class="langBtn" data-lang="de">DE</button>
   </div>
   <div id="tabs">
-    <button class="tab on" data-tab="sys" data-i18n="tabSys">System</button>
-    <button class="tab" data-tab="vis" data-i18n="tabVis">Visuals</button>
-    <button class="tab" data-tab="snd" data-i18n="tabSnd">Sound</button>
+    <button class="tab on" data-tab="sys" data-i18n="tabSys" aria-label="System">System</button>
+    <button class="tab" data-tab="vis" data-i18n="tabVis" aria-label="Visuals">Visuals</button>
+    <button class="tab" data-tab="snd" data-i18n="tabSnd" aria-label="Sound">Sound</button>
   </div>
   <div class="tabPage on" id="page-sys"></div>
   <div class="tabPage" id="page-vis"></div>
   <div class="tabPage" id="page-snd"></div>
 </div>
-<div id="restoreBtn" class="glass">☰</div>
+<button id="restoreBtn" class="glass" type="button" aria-label="Show panel">☰</button>
 <div id="readout" class="glass"></div>
 <div id="info" class="glass"></div>
 <div id="toast" class="glass"></div>
@@ -1154,8 +1176,9 @@ function followTarget(b){
 function releaseFollow(){followBody=null;S.follow=null;cam.tx=0;cam.ty=0;}
 /* keyboard */
 addEventListener("keydown",e=>{
-  if(e.target.tagName==="INPUT")return;
-  const k=e.key.toLowerCase();
+  const t=e.target.tagName,k=e.key.toLowerCase();
+  if(t==="INPUT"||t==="TEXTAREA"||t==="SELECT")return;
+  if(k===" "&&t==="BUTTON")return;
   if(k==="h"){document.body.classList.toggle("uiHidden");}
   else if(k==="f"){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();}
   else if(k==="p"){takePhoto();}
@@ -1220,7 +1243,7 @@ function buildPanel(){
     slider("volShimmer",T("shimmer"),0,100,1,audio.vols.shimmer,"%")+
     tgl("sndFollow",T("follow"),audio.followSim);
   wirePanel();
-  document.querySelectorAll(".tab").forEach(b=>b.textContent=T(b.dataset.i18n));
+  document.querySelectorAll(".tab").forEach(b=>{b.textContent=T(b.dataset.i18n);b.setAttribute("aria-label",T(b.dataset.i18n));});
   document.querySelectorAll(".langBtn").forEach(b=>b.classList.toggle("on",b.dataset.lang===lang));
   hintEl.textContent=T("hint");
 }
