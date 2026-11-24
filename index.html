@@ -13,6 +13,8 @@
 html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;color:var(--txt)}
 canvas{position:absolute;top:0;left:0;width:100%;height:100%;display:block}
 #bgA,#bgB{z-index:0}#bgB{z-index:1}#scene{z-index:3;touch-action:none}
+/* starfield canvases bleed past the viewport (parallax shift); the wrapper clips them so the page never widens */
+#bgWrap{position:fixed;inset:0;overflow:hidden;z-index:0;pointer-events:none}
 /* colour wash behind the glass panels: above the starfield canvases, below #scene (transparent) */
 body::before{content:"";position:fixed;inset:0;z-index:2;pointer-events:none;
   background:radial-gradient(40vmax 40vmax at 88% 12%,rgba(127,180,255,.22),transparent 70%),
@@ -27,7 +29,7 @@ body::before{content:"";position:fixed;inset:0;z-index:2;pointer-events:none;
 #panel.min{opacity:0;transform:translateX(30px);pointer-events:none}
 #panelHead{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--panel-border);flex:0 0 auto}
 #panelHead h1{font-size:14px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
-#minBtn{background:none;border:none;color:var(--txt-dim);font-size:16px;cursor:pointer;padding:2px 6px}
+#minBtn{background:none;border:none;color:var(--txt-dim);font-size:16px;cursor:pointer;padding:2px 6px;min-width:24px;min-height:24px}
 #minBtn:hover{color:#fff}
 #restoreBtn{position:fixed;top:14px;right:14px;width:40px;height:40px;border-radius:50%;z-index:10;
   display:none;align-items:center;justify-content:center;cursor:pointer;color:var(--accent);font-size:18px;border:1px solid var(--panel-border);padding:0;font-family:inherit;line-height:1}
@@ -46,13 +48,14 @@ body::before{content:"";position:fixed;inset:0;z-index:2;pointer-events:none;
 .ctl{margin-bottom:11px}
 .ctl label{display:flex;justify-content:space-between;font-size:12px;color:var(--txt-dim);margin-bottom:4px}
 .ctl label b{color:var(--txt);font-weight:500;font-variant-numeric:tabular-nums}
-input[type=range]{width:100%;height:18px;-webkit-appearance:none;background:none;cursor:pointer}
+.langBtn,.tab,.btn,.palBtn{min-height:24px}
+input[type=range]{width:100%;height:24px;-webkit-appearance:none;background:none;cursor:pointer}
 input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:rgba(255,255,255,.18)}
 input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;
   background:var(--accent);margin-top:-5px;box-shadow:0 0 6px rgba(127,180,255,.7)}
 input[type=range]::-moz-range-track{height:4px;border-radius:2px;background:rgba(255,255,255,.18)}
 input[type=range]::-moz-range-thumb{width:14px;height:14px;border:none;border-radius:50%;background:var(--accent)}
-.tRow{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-size:12.5px}
+.tRow{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-size:12.5px;min-height:24px;cursor:pointer}
 .sw{position:relative;width:34px;height:19px;flex:0 0 auto}
 .sw input{opacity:0;width:0;height:0}
 .sw i{position:absolute;inset:0;border-radius:10px;background:rgba(255,255,255,.15);transition:.25s;cursor:pointer}
@@ -80,16 +83,20 @@ input[type=range]::-moz-range-thumb{width:14px;height:14px;border:none;border-ra
 #caption{position:fixed;left:50%;bottom:70px;transform:translateX(-50%);z-index:20;padding:12px 22px;font-size:14px;
   max-width:520px;text-align:center;line-height:1.5;opacity:0;transition:opacity .8s;pointer-events:none;font-style:italic}
 #hint{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:8;padding:6px 16px;font-size:11.5px;
-  color:var(--txt-dim);opacity:0;transition:opacity 1s;pointer-events:none;white-space:nowrap}
+  color:var(--txt-dim);opacity:0;transition:opacity 1s;pointer-events:none;display:none;text-align:center;
+  max-width:calc(100vw - 644px)}
+/* keyboard hint: mouse/trackpad only; max-width keeps it clear of #readout (left 14..~176) and #panel (right 314px + 8px gap) */
+@media (hover:hover) and (pointer:fine) and (min-width:824px){#hint{display:block}}
 body.uiHidden #panel,body.uiHidden #readout,body.uiHidden #restoreBtn,body.uiHidden #hint{display:none}
-#pullTab{display:none;width:44px;height:14px;border-radius:7px;background:rgba(255,255,255,.3);margin:8px auto 2px;cursor:pointer;background-clip:content-box;padding:4px 0}
+#pullTab{display:none;position:relative;width:64px;height:24px;margin:0 auto;padding:0;border:0;background:none;cursor:pointer;flex:0 0 auto;font:inherit}
+#pullTab::before{content:"";position:absolute;left:10px;right:10px;top:50%;height:6px;margin-top:-3px;border-radius:3px;background:rgba(255,255,255,.3)}
 /* keyboard focus */
 button:focus-visible,.tab:focus-visible,.langBtn:focus-visible,.palBtn:focus-visible,.sw input:focus-visible+i{outline:2px solid var(--accent);outline-offset:2px}
 @media (max-width:700px){
   .glass{backdrop-filter:blur(11px);-webkit-backdrop-filter:blur(11px)}
-  #panel{top:auto;right:4px;left:4px;bottom:4px;width:auto;max-height:60vh;max-height:60dvh;border-radius:16px;transform:translateY(calc(100% - 40px))}
+  #panel{top:auto;right:4px;left:4px;bottom:4px;width:auto;max-height:60vh;max-height:60dvh;border-radius:16px;transform:translateY(calc(100% - var(--peek,96px)))}
   #panel.open{transform:translateY(0)}
-  #panel.min{opacity:1;pointer-events:auto;transform:translateY(calc(100% - 40px))}
+  #panel.min{opacity:1;pointer-events:auto;transform:translateY(calc(100% - var(--peek,96px)))}
   #pullTab{display:block}
   #restoreBtn{display:none!important}
   #hint{display:none}
@@ -101,23 +108,21 @@ button:focus-visible,.tab:focus-visible,.langBtn:focus-visible,.palBtn:focus-vis
 }
 /* touch targets >= 24px */
 @media (pointer:coarse),(max-width:700px){
-  .langBtn,.tab,.btn,.palBtn{min-height:24px}
-  #minBtn{min-width:24px;min-height:24px}
-  #pullTab{height:24px;padding:9px 0;flex:0 0 auto}
-  input[type=range]{height:24px}
   input[type=range]::-webkit-slider-thumb{width:22px;height:22px;margin-top:-9px}
   input[type=range]::-moz-range-thumb{width:22px;height:22px}
 }
+/* sheet grab handle: 64x44 hit area on touch, the visible bar stays 44x6 */
+@media (pointer:coarse){#pullTab{height:44px}}
 @media (prefers-reduced-motion: reduce){
   #panel,#toast,#caption,#hint,#fadein,.sw i,.sw i:before{transition:none}
 }
 </style>
 </head>
 <body>
-<canvas id="bgA"></canvas><canvas id="bgB"></canvas><canvas id="scene"></canvas>
+<div id="bgWrap"><canvas id="bgA"></canvas><canvas id="bgB"></canvas></div><canvas id="scene"></canvas>
 <div id="fadein"></div>
 <div id="panel" class="glass">
-  <div id="pullTab"></div>
+  <button type="button" id="pullTab" aria-label="Settings panel" aria-controls="panel" aria-expanded="false"></button>
   <div id="panelHead"><h1>Orrery</h1><button id="minBtn" title="minimise" aria-label="Minimise panel">—</button></div>
   <div id="langRow">
     <button class="langBtn on" data-lang="en">EN</button><button class="langBtn" data-lang="hu">HU</button>
@@ -204,11 +209,16 @@ const PALETTES=[
 const bgA=document.getElementById("bgA"),bgB=document.getElementById("bgB"),scene=document.getElementById("scene");
 const ctx=scene.getContext("2d");
 let W=0,H=0,DPR=1,isMobile=matchMedia("(max-width:700px)").matches;
+/* starfield bleed (CSS px) on every edge: > max parallax shift (14/2 = 7 px, 10/2 = 5 px) plus margin */
+const BLEED=12;
+const FINE_PTR=matchMedia("(hover:hover) and (pointer:fine)");
 function resize(){
   DPR=Math.min(2,window.devicePixelRatio||1);
   W=innerWidth;H=innerHeight;
-  for(const c of[bgA,bgB,scene]){c.width=Math.round(W*DPR);c.height=Math.round(H*DPR);c.style.width=W+"px";c.style.height=H+"px";}
+  for(const c of[bgA,bgB,scene]){const b=c===scene?0:BLEED,cw=W+2*b,ch=H+2*b;
+    c.width=Math.round(cw*DPR);c.height=Math.round(ch*DPR);c.style.width=cw+"px";c.style.height=ch+"px";c.style.left=c.style.top=-b+"px";}
   ctx.setTransform(DPR,0,0,DPR,0,0);
+  setPeek();
   drawStarfield(bgA,PALETTES[S.palette]);
   if(palFade.on)drawStarfield(bgB,PALETTES[palFade.to]);
   buildSprites();
@@ -1130,6 +1140,7 @@ let autoPalT=0;
 
 /* ============ HUD ============ */
 const readoutEl=document.getElementById("readout"),infoEl=document.getElementById("info");
+const mqNarrow=matchMedia("(max-width:700px)");
 let hudT=0;
 function updateHUD(dt){
   hudT+=dt;
@@ -1147,8 +1158,6 @@ function updateHUD(dt){
   const tgt=followBody||hoverBody;
   if(tgt&&tgt.px>-50&&tgt.px<W+50){
     infoEl.style.display="block";
-    const x=clamp(tgt.px+18,8,W-240),y=clamp(tgt.py-20,8,H-120);
-    infoEl.style.left=x+"px";infoEl.style.top=y+"px";
     if(infoEl._b!==tgt||hudT===0){
       infoEl._b=tgt;
       const Td=tgt.T,per=Td>=365.25*2?fmtN(Td/365.25,1)+" "+T("years"):fmtN(Td,0)+" "+T("days");
@@ -1157,6 +1166,13 @@ function updateHUD(dt){
       const nm=tgt.id==="comet"?T("comet"):T(tgt.id);
       infoEl.innerHTML=`<h3>${nm}</h3><span class="dim">${T("period")}:</span> ${per}<br><span class="dim">${T("dist")}:</span> ${fmtN(tgt.a,2)} AU<br><em class="dim">${state}</em>`;
     }
+    /* position after the content update, from the label's real size; keep it left of a visible desktop panel */
+    const iw=infoEl.offsetWidth,ih=infoEl.offsetHeight;
+    let maxX=W-8-iw;
+    if(!mqNarrow.matches&&!panel.classList.contains("min")&&!document.body.classList.contains("uiHidden"))
+      maxX=Math.min(maxX,panel.getBoundingClientRect().left-8-iw);
+    const x=clamp(tgt.px+18,8,maxX),y=clamp(tgt.py-20,8,H-8-ih);
+    infoEl.style.left=x+"px";infoEl.style.top=y+"px";
   }else{infoEl.style.display="none";infoEl._b=null;}
 }
 /* ============ INTERACTION ============ */
@@ -1181,7 +1197,7 @@ scene.addEventListener("mousemove",e=>{
     hoverBody=pick(e.clientX,e.clientY);
     scene.style.cursor=hoverBody?"pointer":"default";
   }
-  if(S.parallax&&!REDUCED){
+  if(S.parallax&&!REDUCED&&FINE_PTR.matches){
     const px=(e.clientX/W-.5)*-14,py=(e.clientY/H-.5)*-10;
     bgA.style.transform=`translate(${px}px,${py}px)`;
     bgB.style.transform=`translate(${px}px,${py}px)`;
@@ -1259,7 +1275,7 @@ function slider(id,lbl,min,max,stepV,val,unit){
   <input type="range" id="${id}" min="${min}" max="${max}" step="${stepV}" value="${val}"></div>`;
 }
 function tgl(id,lbl,on){
-  return`<div class="tRow"><span>${lbl}</span><label class="sw"><input type="checkbox" id="${id}" ${on?"checked":""}><i></i></label></div>`;
+  return`<label class="tRow"><span>${lbl}</span><span class="sw"><input type="checkbox" id="${id}" ${on?"checked":""}><i></i></span></label>`;
 }
 function buildPanel(){
   /* speed slider is log-feel: slider 0..100 maps to 0..120 d/s quadratically */
@@ -1352,12 +1368,19 @@ function syncSliders(){
 }
 /* panel chrome */
 const panel=document.getElementById("panel"),restoreBtn=document.getElementById("restoreBtn");
+const pullTab=document.getElementById("pullTab"),panelHead=document.getElementById("panelHead");
+const syncPull=()=>pullTab.setAttribute("aria-expanded",panel.classList.contains("open")?"true":"false");
+/* collapsed sheet peek = top border + grab bar + full #panelHead row, from real element heights */
+function setPeek(){
+  if(!panelHead.offsetHeight)return; // panel hidden (uiHidden): keep the last value
+  panel.style.setProperty("--peek",(panel.clientTop+panelHead.offsetTop+panelHead.offsetHeight)+"px");
+}
 document.getElementById("minBtn").addEventListener("click",()=>{
-  if(matchMedia("(max-width:700px)").matches){panel.classList.remove("open");return;}
+  if(matchMedia("(max-width:700px)").matches){panel.classList.remove("open");syncPull();return;}
   panel.classList.add("min");restoreBtn.classList.add("show");
 });
 restoreBtn.addEventListener("click",()=>{panel.classList.remove("min");restoreBtn.classList.remove("show");});
-document.getElementById("pullTab").addEventListener("click",()=>{panel.classList.remove("min");panel.classList.toggle("open");});
+pullTab.addEventListener("click",()=>{panel.classList.remove("min");panel.classList.toggle("open");syncPull();});
 document.querySelectorAll(".tab").forEach(b=>b.addEventListener("click",()=>{
   document.querySelectorAll(".tab").forEach(x=>x.classList.toggle("on",x===b));
   document.querySelectorAll(".tabPage").forEach(p=>p.classList.toggle("on",p.id==="page-"+b.dataset.tab));
@@ -1372,9 +1395,11 @@ function takePhoto(){
   const scale=Math.min(2,4/DPR);
   const out=makeCanvas(scene.width*scale/DPR*DPR,scene.height*scale/DPR*DPR);
   const g=out.getContext("2d");
-  g.drawImage(bgA,0,0,out.width,out.height);
+  /* the starfield canvases carry a BLEED margin: copy only the on-screen part */
+  const bx=Math.round(BLEED*DPR);
+  g.drawImage(bgA,bx,bx,scene.width,scene.height,0,0,out.width,out.height);
   const bo=parseFloat(bgB.style.opacity)||0;
-  if(bo>0){g.globalAlpha=bo;g.drawImage(bgB,0,0,out.width,out.height);g.globalAlpha=1;}
+  if(bo>0){g.globalAlpha=bo;g.drawImage(bgB,bx,bx,scene.width,scene.height,0,0,out.width,out.height);g.globalAlpha=1;}
   g.drawImage(scene,0,0,out.width,out.height);
   const a=document.createElement("a");
   a.download="orrery-"+Date.now()+".png";
