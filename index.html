@@ -31,6 +31,13 @@ body::before{content:"";position:fixed;inset:0;z-index:2;pointer-events:none;
 #panelHead h1{font-size:14px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
 #minBtn{background:none;border:none;color:var(--txt-dim);font-size:16px;cursor:pointer;padding:2px 6px;min-width:24px;min-height:24px}
 #minBtn:hover{color:#fff}
+/* mobile quick controls in #panelHead (shown only at max-width:700px) */
+#quick{display:none}
+#quick button{flex:0 0 auto;min-width:32px;min-height:32px;padding:0 6px;border-radius:8px;border:1px solid var(--panel-border);
+  background:rgba(255,255,255,.07);color:var(--txt);font:inherit;font-size:15px;line-height:1;cursor:pointer;transition:.2s}
+#quick button:hover:not(:disabled){background:rgba(255,255,255,.14);border-color:var(--accent)}
+#quick button:disabled{opacity:.45;cursor:default}
+#quick #qSpeed{font-size:11px;max-width:92px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
 #restoreBtn{position:fixed;top:14px;right:14px;width:40px;height:40px;border-radius:50%;z-index:10;
   display:none;align-items:center;justify-content:center;cursor:pointer;color:var(--accent);font-size:18px;border:1px solid var(--panel-border);padding:0;font-family:inherit;line-height:1}
 #restoreBtn.show{display:flex}
@@ -105,14 +112,30 @@ button:focus-visible,.tab:focus-visible,.langBtn:focus-visible,.palBtn:focus-vis
   #caption{width:calc(100vw - 16px);max-width:520px}
   #info{max-width:190px}
   .secT,.langBtn,.palBtn{font-size:12px}
+  #panelHead{gap:4px}
+  #panelHead h1{font-size:12px;letter-spacing:.08em;flex:0 1 auto;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  #quick{display:flex;gap:2px;align-items:center;flex:0 0 auto}
+  #minBtn{flex:0 0 auto}
 }
+@media (max-width:340px){#panelHead h1{display:none}}
 /* touch targets >= 24px */
 @media (pointer:coarse),(max-width:700px){
   input[type=range]::-webkit-slider-thumb{width:22px;height:22px;margin-top:-9px}
   input[type=range]::-moz-range-thumb{width:22px;height:22px}
 }
 /* sheet grab handle: 64x44 hit area on touch, the visible bar stays 44x6 */
-@media (pointer:coarse){#pullTab{height:44px}}
+/* touch: 44px targets; range thumb 28px centred on the 4px track ((4-28)/2 = -12px) */
+@media (pointer:coarse){
+  #pullTab{height:44px}
+  .langBtn,.tab,.btn,.palBtn,#minBtn{min-height:44px}
+  #minBtn{min-width:44px}
+  .tRow{min-height:44px}
+  input[type=range]{height:44px}
+  input[type=range]::-webkit-slider-thumb{width:28px;height:28px;margin-top:-12px}
+  input[type=range]::-moz-range-thumb{width:28px;height:28px}
+  #quick button{min-width:44px;min-height:44px}
+  #panelHead{padding-top:4px;padding-bottom:4px}
+}
 @media (prefers-reduced-motion: reduce){
   #panel,#toast,#caption,#hint,#fadein,.sw i,.sw i:before{transition:none}
 }
@@ -123,7 +146,13 @@ button:focus-visible,.tab:focus-visible,.langBtn:focus-visible,.palBtn:focus-vis
 <div id="fadein"></div>
 <div id="panel" class="glass">
   <button type="button" id="pullTab" aria-label="Settings panel" aria-controls="panel" aria-expanded="false"></button>
-  <div id="panelHead"><h1>Orrery</h1><button id="minBtn" title="minimise" aria-label="Minimise panel">—</button></div>
+  <div id="panelHead"><h1>Orrery</h1>
+    <div id="quick" role="group" aria-label="Quick controls" data-i18n-label="quickCtl">
+      <button type="button" id="qPlay" aria-label="Pause time" data-i18n-label="pauseTime" aria-pressed="false"><span aria-hidden="true">&#x23F8;&#xFE0E;</span></button>
+      <button type="button" id="qSpeed" aria-label="Time speed: 10 d/s">10 d/s</button>
+      <button type="button" id="qPrev" aria-label="Previous planet" data-i18n-label="prevPlanet"><span aria-hidden="true">&#x2039;</span></button>
+      <button type="button" id="qNext" aria-label="Next planet" data-i18n-label="nextPlanet"><span aria-hidden="true">&#x203A;</span></button>
+    </div><button id="minBtn" title="minimise" aria-label="Minimise panel">—</button></div>
   <div id="langRow">
     <button class="langBtn on" data-lang="en">EN</button><button class="langBtn" data-lang="hu">HU</button>
     <button class="langBtn" data-lang="ro">RO</button><button class="langBtn" data-lang="de">DE</button>
@@ -147,16 +176,27 @@ button:focus-visible,.tab:focus-visible,.langBtn:focus-visible,.palBtn:focus-vis
 "use strict";
 /* ============ I18N ============ */
 const I18N={
-en:{tabSys:"System",tabVis:"Visuals",tabSnd:"Sound",speed:"Time speed",daysPerS:"d/s",paused:"paused",tilt:"Camera tilt",zoom:"Zoom",kepler:"Kepler motion",orbits:"Orbit paths",trails:"Trails",labels:"Labels",asteroids:"Asteroid belt",kuiper:"Kuiper belt",moon:"Moon",parallax:"Parallax",summon:"Summon comet ☄",palettes:"Palette",autoPal:"Auto-switch palette",boost:"Colour boost",nebula:"Nebula density",zodiac:"Zodiacal light",guard:"Performance guard",photo:"Photo",copy:"Copy link",projector:"Projector",hideui:"Hide UI",sound:"Enable sound",master:"Master volume",drone:"Space drone",wind:"Solar wind",chimes:"Orbit chimes",shimmer:"Comet shimmer",follow:"Follow the simulation",palClassic:"Classic",palIndigo:"Deep Indigo",palNebula:"Warm Nebula",palIce:"Ice",linkCopied:"Link copied to clipboard",photoSaved:"Photo saved",guardOn:"Performance guard: reduced detail for smooth motion",projOn:"Projector mode — Esc to exit",cometSummoned:"A new comet plunges sunward…",keplerCap:"Planets do not move at constant speed. They fall toward the Sun, fastest at perihelion — Kepler saw it in 1609.",years:"y",days:"d",rate:"rate",season:"Season",spring:"Spring",summer:"Summer",autumn:"Autumn",winter:"Winter",period:"Period",dist:"Mean distance",fast:"near perihelion — moving fast",slow:"near aphelion — moving slow",mid:"mid-orbit",hint:"H hide UI · F fullscreen · P photo · Space projector · M sound · 1–8 follow planet · C comet · Esc release",moonN:"Moon",comet:"Comet",comets:"Comets",actions:"Actions",mercury:"Mercury",venus:"Venus",earth:"Earth",mars:"Mars",jupiter:"Jupiter",saturn:"Saturn",uranus:"Uranus",neptune:"Neptune",pluto:"Pluto"},
-hu:{tabSys:"Rendszer",tabVis:"Látvány",tabSnd:"Hang",speed:"Idő sebesség",daysPerS:"nap/mp",paused:"szünetel",tilt:"Kamera dőlés",zoom:"Nagyítás",kepler:"Kepler-mozgás",orbits:"Pályavonalak",trails:"Csóvák",labels:"Címkék",asteroids:"Kisbolygóöv",kuiper:"Kuiper-öv",moon:"Hold",parallax:"Parallaxis",summon:"Üstökös idézése ☄",palettes:"Paletta",autoPal:"Automatikus palettaváltás",boost:"Színerősítés",nebula:"Köd sűrűség",zodiac:"Állatövi fény",guard:"Teljesítményőr",photo:"Fotó",copy:"Link másolása",projector:"Projektor",hideui:"UI elrejtése",sound:"Hang bekapcsolása",master:"Fő hangerő",drone:"Űr-zúgás",wind:"Napszél",chimes:"Pálya-csengők",shimmer:"Üstökös-csillám",follow:"Kövesse a szimulációt",palClassic:"Klasszikus",palIndigo:"Mély indigó",palNebula:"Meleg köd",palIce:"Jég",linkCopied:"Link a vágólapra másolva",photoSaved:"Fotó mentve",guardOn:"Teljesítményőr: kevesebb részlet a sima mozgásért",projOn:"Projektor mód — Esc a kilépéshez",cometSummoned:"Új üstökös zuhan a Nap felé…",keplerCap:"A bolygók nem állandó sebességgel haladnak. A Nap felé esnek, napközelben a leggyorsabbak — Kepler 1609-ben látta meg.",years:"év",days:"nap",rate:"ütem",season:"Évszak",spring:"Tavasz",summer:"Nyár",autumn:"Ősz",winter:"Tél",period:"Keringési idő",dist:"Közepes távolság",fast:"napközelben — gyorsan halad",slow:"naptávolban — lassan halad",mid:"pálya közepén",hint:"H UI elrejtés · F teljes képernyő · P fotó · Szóköz projektor · M hang · 1–8 bolygókövetés · C üstökös · Esc elenged",moonN:"Hold",comet:"Üstökös",comets:"Üstökösök",actions:"Műveletek",mercury:"Merkúr",venus:"Vénusz",earth:"Föld",mars:"Mars",jupiter:"Jupiter",saturn:"Szaturnusz",uranus:"Uránusz",neptune:"Neptunusz",pluto:"Plútó"},
-ro:{tabSys:"Sistem",tabVis:"Vizual",tabSnd:"Sunet",speed:"Viteza timpului",daysPerS:"zile/s",paused:"pauză",tilt:"Înclinare cameră",zoom:"Zoom",kepler:"Mișcare Kepler",orbits:"Traiectorii",trails:"Urme",labels:"Etichete",asteroids:"Centura de asteroizi",kuiper:"Centura Kuiper",moon:"Luna",parallax:"Paralaxă",summon:"Invocă o cometă ☄",palettes:"Paletă",autoPal:"Schimbare automată",boost:"Intensitate culoare",nebula:"Densitate nebuloasă",zodiac:"Lumină zodiacală",guard:"Gardian de performanță",photo:"Foto",copy:"Copiază linkul",projector:"Proiector",hideui:"Ascunde UI",sound:"Activează sunetul",master:"Volum principal",drone:"Zumzet spațial",wind:"Vânt solar",chimes:"Clopoței orbitali",shimmer:"Sclipire cometă",follow:"Urmează simularea",palClassic:"Clasic",palIndigo:"Indigo profund",palNebula:"Nebuloasă caldă",palIce:"Gheață",linkCopied:"Link copiat în clipboard",photoSaved:"Fotografie salvată",guardOn:"Gardian: detalii reduse pentru mișcare lină",projOn:"Mod proiector — Esc pentru ieșire",cometSummoned:"O nouă cometă se prăbușește spre Soare…",keplerCap:"Planetele nu se mișcă cu viteză constantă. Ele cad spre Soare, cel mai repede la periheliu — Kepler a văzut asta în 1609.",years:"ani",days:"zile",rate:"ritm",season:"Anotimp",spring:"Primăvară",summer:"Vară",autumn:"Toamnă",winter:"Iarnă",period:"Perioadă",dist:"Distanța medie",fast:"aproape de periheliu — se mișcă repede",slow:"aproape de afeliu — se mișcă încet",mid:"la mijlocul orbitei",hint:"H ascunde UI · F ecran complet · P foto · Spațiu proiector · M sunet · 1–8 urmărește planeta · C cometă · Esc eliberează",moonN:"Luna",comet:"Cometă",comets:"Comete",actions:"Acțiuni",mercury:"Mercur",venus:"Venus",earth:"Pământ",mars:"Marte",jupiter:"Jupiter",saturn:"Saturn",uranus:"Uranus",neptune:"Neptun",pluto:"Pluto"},
-de:{tabSys:"System",tabVis:"Optik",tabSnd:"Klang",speed:"Zeitgeschwindigkeit",daysPerS:"Tage/s",paused:"pausiert",tilt:"Kameraneigung",zoom:"Zoom",kepler:"Kepler-Bewegung",orbits:"Bahnlinien",trails:"Spuren",labels:"Beschriftung",asteroids:"Asteroidengürtel",kuiper:"Kuipergürtel",moon:"Mond",parallax:"Parallaxe",summon:"Komet beschwören ☄",palettes:"Palette",autoPal:"Automatischer Wechsel",boost:"Farbverstärkung",nebula:"Nebeldichte",zodiac:"Zodiakallicht",guard:"Leistungswächter",photo:"Foto",copy:"Link kopieren",projector:"Projektor",hideui:"UI ausblenden",sound:"Ton aktivieren",master:"Gesamtlautstärke",drone:"Weltraum-Dröhnen",wind:"Sonnenwind",chimes:"Bahnenklänge",shimmer:"Kometenschimmer",follow:"Der Simulation folgen",palClassic:"Klassisch",palIndigo:"Tiefes Indigo",palNebula:"Warmer Nebel",palIce:"Eis",linkCopied:"Link in Zwischenablage kopiert",photoSaved:"Foto gespeichert",guardOn:"Leistungswächter: weniger Details für flüssige Bewegung",projOn:"Projektormodus — Esc zum Beenden",cometSummoned:"Ein neuer Komet stürzt zur Sonne…",keplerCap:"Planeten bewegen sich nicht mit konstanter Geschwindigkeit. Sie fallen zur Sonne, am schnellsten im Perihel — Kepler erkannte es 1609.",years:"J",days:"T",rate:"Rate",season:"Jahreszeit",spring:"Frühling",summer:"Sommer",autumn:"Herbst",winter:"Winter",period:"Umlaufzeit",dist:"Mittlere Distanz",fast:"nahe Perihel — schnell",slow:"nahe Aphel — langsam",mid:"mittlere Bahn",hint:"H UI ausblenden · F Vollbild · P Foto · Leertaste Projektor · M Ton · 1–8 Planet folgen · C Komet · Esc loslassen",moonN:"Mond",comet:"Komet",comets:"Kometen",actions:"Aktionen",mercury:"Merkur",venus:"Venus",earth:"Erde",mars:"Mars",jupiter:"Jupiter",saturn:"Saturn",uranus:"Uranus",neptune:"Neptun",pluto:"Pluto"}
+en:{tabSys:"System",tabVis:"Visuals",tabSnd:"Sound",speed:"Time speed",daysPerS:"d/s",paused:"paused",tilt:"Camera tilt",zoom:"Zoom",kepler:"Kepler motion",orbits:"Orbit paths",trails:"Trails",labels:"Labels",asteroids:"Asteroid belt",kuiper:"Kuiper belt",moon:"Moon",parallax:"Parallax",summon:"Summon comet ☄",palettes:"Palette",autoPal:"Auto-switch palette",boost:"Colour boost",nebula:"Nebula density",zodiac:"Zodiacal light",guard:"Performance guard",photo:"Photo",copy:"Copy link",projector:"Projector",hideui:"Hide UI",sound:"Enable sound",master:"Master volume",drone:"Space drone",wind:"Solar wind",chimes:"Orbit chimes",shimmer:"Comet shimmer",follow:"Follow the simulation",palClassic:"Classic",palIndigo:"Deep Indigo",palNebula:"Warm Nebula",palIce:"Ice",linkCopied:"Link copied to clipboard",photoSaved:"Photo saved",guardOn:"Performance guard: reduced detail for smooth motion",projOn:"Projector mode — Esc to exit",cometSummoned:"A new comet plunges sunward…",keplerCap:"Planets do not move at constant speed. They fall toward the Sun, fastest at perihelion — Kepler saw it in 1609.",years:"y",days:"d",rate:"rate",season:"Season",spring:"Spring",summer:"Summer",autumn:"Autumn",winter:"Winter",period:"Period",dist:"Mean distance",fast:"near perihelion — moving fast",slow:"near aphelion — moving slow",mid:"mid-orbit",hint:"H hide UI · F fullscreen · P photo · Space projector · M sound · 1–8 follow planet · C comet · Esc release",moonN:"Moon",comet:"Comet",comets:"Comets",actions:"Actions",quickCtl:"Quick controls",pauseTime:"Pause time",prevPlanet:"Previous planet",nextPlanet:"Next planet",mercury:"Mercury",venus:"Venus",earth:"Earth",mars:"Mars",jupiter:"Jupiter",saturn:"Saturn",uranus:"Uranus",neptune:"Neptune",pluto:"Pluto"},
+hu:{tabSys:"Rendszer",tabVis:"Látvány",tabSnd:"Hang",speed:"Idő sebesség",daysPerS:"nap/mp",paused:"szünetel",tilt:"Kamera dőlés",zoom:"Nagyítás",kepler:"Kepler-mozgás",orbits:"Pályavonalak",trails:"Csóvák",labels:"Címkék",asteroids:"Kisbolygóöv",kuiper:"Kuiper-öv",moon:"Hold",parallax:"Parallaxis",summon:"Üstökös idézése ☄",palettes:"Paletta",autoPal:"Automatikus palettaváltás",boost:"Színerősítés",nebula:"Köd sűrűség",zodiac:"Állatövi fény",guard:"Teljesítményőr",photo:"Fotó",copy:"Link másolása",projector:"Projektor",hideui:"UI elrejtése",sound:"Hang bekapcsolása",master:"Fő hangerő",drone:"Űr-zúgás",wind:"Napszél",chimes:"Pálya-csengők",shimmer:"Üstökös-csillám",follow:"Kövesse a szimulációt",palClassic:"Klasszikus",palIndigo:"Mély indigó",palNebula:"Meleg köd",palIce:"Jég",linkCopied:"Link a vágólapra másolva",photoSaved:"Fotó mentve",guardOn:"Teljesítményőr: kevesebb részlet a sima mozgásért",projOn:"Projektor mód — Esc a kilépéshez",cometSummoned:"Új üstökös zuhan a Nap felé…",keplerCap:"A bolygók nem állandó sebességgel haladnak. A Nap felé esnek, napközelben a leggyorsabbak — Kepler 1609-ben látta meg.",years:"év",days:"nap",rate:"ütem",season:"Évszak",spring:"Tavasz",summer:"Nyár",autumn:"Ősz",winter:"Tél",period:"Keringési idő",dist:"Közepes távolság",fast:"napközelben — gyorsan halad",slow:"naptávolban — lassan halad",mid:"pálya közepén",hint:"H UI elrejtés · F teljes képernyő · P fotó · Szóköz projektor · M hang · 1–8 bolygókövetés · C üstökös · Esc elenged",moonN:"Hold",comet:"Üstökös",comets:"Üstökösök",actions:"Műveletek",quickCtl:"Gyorsvezérlők",pauseTime:"Idő megállítása",prevPlanet:"Előző bolygó",nextPlanet:"Következő bolygó",mercury:"Merkúr",venus:"Vénusz",earth:"Föld",mars:"Mars",jupiter:"Jupiter",saturn:"Szaturnusz",uranus:"Uránusz",neptune:"Neptunusz",pluto:"Plútó"},
+ro:{tabSys:"Sistem",tabVis:"Vizual",tabSnd:"Sunet",speed:"Viteza timpului",daysPerS:"zile/s",paused:"pauză",tilt:"Înclinare cameră",zoom:"Zoom",kepler:"Mișcare Kepler",orbits:"Traiectorii",trails:"Urme",labels:"Etichete",asteroids:"Centura de asteroizi",kuiper:"Centura Kuiper",moon:"Luna",parallax:"Paralaxă",summon:"Invocă o cometă ☄",palettes:"Paletă",autoPal:"Schimbare automată",boost:"Intensitate culoare",nebula:"Densitate nebuloasă",zodiac:"Lumină zodiacală",guard:"Gardian de performanță",photo:"Foto",copy:"Copiază linkul",projector:"Proiector",hideui:"Ascunde UI",sound:"Activează sunetul",master:"Volum principal",drone:"Zumzet spațial",wind:"Vânt solar",chimes:"Clopoței orbitali",shimmer:"Sclipire cometă",follow:"Urmează simularea",palClassic:"Clasic",palIndigo:"Indigo profund",palNebula:"Nebuloasă caldă",palIce:"Gheață",linkCopied:"Link copiat în clipboard",photoSaved:"Fotografie salvată",guardOn:"Gardian: detalii reduse pentru mișcare lină",projOn:"Mod proiector — Esc pentru ieșire",cometSummoned:"O nouă cometă se prăbușește spre Soare…",keplerCap:"Planetele nu se mișcă cu viteză constantă. Ele cad spre Soare, cel mai repede la periheliu — Kepler a văzut asta în 1609.",years:"ani",days:"zile",rate:"ritm",season:"Anotimp",spring:"Primăvară",summer:"Vară",autumn:"Toamnă",winter:"Iarnă",period:"Perioadă",dist:"Distanța medie",fast:"aproape de periheliu — se mișcă repede",slow:"aproape de afeliu — se mișcă încet",mid:"la mijlocul orbitei",hint:"H ascunde UI · F ecran complet · P foto · Spațiu proiector · M sunet · 1–8 urmărește planeta · C cometă · Esc eliberează",moonN:"Luna",comet:"Cometă",comets:"Comete",actions:"Acțiuni",quickCtl:"Comenzi rapide",pauseTime:"Oprește timpul",prevPlanet:"Planeta anterioară",nextPlanet:"Planeta următoare",mercury:"Mercur",venus:"Venus",earth:"Pământ",mars:"Marte",jupiter:"Jupiter",saturn:"Saturn",uranus:"Uranus",neptune:"Neptun",pluto:"Pluto"},
+de:{tabSys:"System",tabVis:"Optik",tabSnd:"Klang",speed:"Zeitgeschwindigkeit",daysPerS:"Tage/s",paused:"pausiert",tilt:"Kameraneigung",zoom:"Zoom",kepler:"Kepler-Bewegung",orbits:"Bahnlinien",trails:"Spuren",labels:"Beschriftung",asteroids:"Asteroidengürtel",kuiper:"Kuipergürtel",moon:"Mond",parallax:"Parallaxe",summon:"Komet beschwören ☄",palettes:"Palette",autoPal:"Automatischer Wechsel",boost:"Farbverstärkung",nebula:"Nebeldichte",zodiac:"Zodiakallicht",guard:"Leistungswächter",photo:"Foto",copy:"Link kopieren",projector:"Projektor",hideui:"UI ausblenden",sound:"Ton aktivieren",master:"Gesamtlautstärke",drone:"Weltraum-Dröhnen",wind:"Sonnenwind",chimes:"Bahnenklänge",shimmer:"Kometenschimmer",follow:"Der Simulation folgen",palClassic:"Klassisch",palIndigo:"Tiefes Indigo",palNebula:"Warmer Nebel",palIce:"Eis",linkCopied:"Link in Zwischenablage kopiert",photoSaved:"Foto gespeichert",guardOn:"Leistungswächter: weniger Details für flüssige Bewegung",projOn:"Projektormodus — Esc zum Beenden",cometSummoned:"Ein neuer Komet stürzt zur Sonne…",keplerCap:"Planeten bewegen sich nicht mit konstanter Geschwindigkeit. Sie fallen zur Sonne, am schnellsten im Perihel — Kepler erkannte es 1609.",years:"J",days:"T",rate:"Rate",season:"Jahreszeit",spring:"Frühling",summer:"Sommer",autumn:"Herbst",winter:"Winter",period:"Umlaufzeit",dist:"Mittlere Distanz",fast:"nahe Perihel — schnell",slow:"nahe Aphel — langsam",mid:"mittlere Bahn",hint:"H UI ausblenden · F Vollbild · P Foto · Leertaste Projektor · M Ton · 1–8 Planet folgen · C Komet · Esc loslassen",moonN:"Mond",comet:"Komet",comets:"Kometen",actions:"Aktionen",quickCtl:"Schnellsteuerung",pauseTime:"Zeit anhalten",prevPlanet:"Vorheriger Planet",nextPlanet:"Nächster Planet",mercury:"Merkur",venus:"Venus",earth:"Erde",mars:"Mars",jupiter:"Jupiter",saturn:"Saturn",uranus:"Uranus",neptune:"Neptun",pluto:"Pluto"}
 };
 let lang=localStorage.getItem("orrery-lang")||"en";
 if(!I18N[lang])lang="en";
 const T=k=>(I18N[lang]&&I18N[lang][k])||I18N.en[k]||k;
 const LOCALE={en:"en-US",hu:"hu-HU",ro:"ro-RO",de:"de-DE"};
 const fmtN=(n,d=0)=>n.toLocaleString(LOCALE[lang],{minimumFractionDigits:d,maximumFractionDigits:d});
+/* quick controls: pure helpers (no DOM; tested in Node) */
+function nextSpeedPreset(cur){
+  const presets=[1,10,30,120];
+  for(const p of presets)if(p>cur)return p;
+  return presets[0];
+}
+/* follow sequence has 10 slots: 0 = none, 1..8 planets, 9 = Pluto; idx<0 (comet/unknown) counts as 0 */
+function stepFollowIndex(idx,dir){
+  const n=10,i=idx<0?0:idx;
+  return((i+dir)%n+n)%n;
+}
 
 /* ============ SEEDED RNG ============ */
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
@@ -1319,15 +1359,15 @@ function buildPanel(){
     tgl("sndFollow",T("follow"),audio.followSim);
   wirePanel();
   document.querySelectorAll(".tab").forEach(b=>{b.textContent=T(b.dataset.i18n);b.setAttribute("aria-label",T(b.dataset.i18n));});
+  document.querySelectorAll("[data-i18n-label]").forEach(el=>el.setAttribute("aria-label",T(el.dataset.i18nLabel)));
   document.querySelectorAll(".langBtn").forEach(b=>b.classList.toggle("on",b.dataset.lang===lang));
   hintEl.textContent=T("hint");
 }
 function on(id,ev,fn){const el=document.getElementById(id);el&&el.addEventListener(ev,fn);}
 function setV(id,txt){const el=document.getElementById(id+"V");el&&(el.textContent=txt);}
 function wirePanel(){
-  on("speed","input",e=>{const v=+e.target.value;S.speed=Math.round((v/100)**2*120*10)/10;
-    setV("speed",S.speed===0?T("paused"):fmtN(S.speed,S.speed<10?1:0)+" "+T("daysPerS"));});
-  setV("speed",S.speed===0?T("paused"):fmtN(S.speed,S.speed<10?1:0)+" "+T("daysPerS"));
+  on("speed","input",e=>{const v=+e.target.value;applySpeed(Math.round((v/100)**2*120*10)/10,true);});
+  applySpeed(S.speed);
   on("tilt","input",e=>{S.tilt=+e.target.value;setV("tilt",S.tilt+"°");});
   on("zoom","input",e=>{S.zoom=+e.target.value;setV("zoom",fmtN(S.zoom,2)+"×");});
   setV("zoom",fmtN(S.zoom,2)+"×");
@@ -1390,6 +1430,35 @@ document.querySelectorAll(".langBtn").forEach(b=>b.addEventListener("click",()=>
   document.querySelectorAll(".langBtn").forEach(x=>x.classList.toggle("on",x===b));
   buildPanel();
 }));
+/* ============ QUICK CONTROLS (mobile sheet head) ============ */
+const qPlay=document.getElementById("qPlay"),qSpeed=document.getElementById("qSpeed");
+let lastSpeed=10;
+const FOLLOW_SEQ=[null,...bodies,pluto];
+/* single place that changes S.speed: slider + its label + quick bar stay in step */
+function applySpeed(v,fromSlider){
+  S.speed=v;
+  const sl=document.getElementById("speed");
+  if(sl&&!fromSlider)sl.value=Math.round(Math.sqrt(S.speed/120)*100);
+  const txt=S.speed===0?T("paused"):fmtN(S.speed,S.speed<10?1:0)+" "+T("daysPerS");
+  setV("speed",txt);
+  const paused=S.speed===0;
+  qPlay.firstElementChild.textContent=paused?"\u25B6\uFE0E":"\u23F8\uFE0E";
+  qPlay.setAttribute("aria-pressed",paused?"true":"false");
+  qSpeed.textContent=txt;
+  qSpeed.setAttribute("aria-label",T("speed")+": "+txt);
+  qSpeed.disabled=paused;
+}
+qPlay.addEventListener("click",()=>{
+  if(S.speed>0){lastSpeed=S.speed;applySpeed(0);}
+  else applySpeed(lastSpeed>0?lastSpeed:10);
+});
+qSpeed.addEventListener("click",()=>applySpeed(nextSpeedPreset(S.speed)));
+function stepFollow(dir){
+  const i=stepFollowIndex(FOLLOW_SEQ.indexOf(followBody),dir);
+  if(i===0)releaseFollow();else followTarget(FOLLOW_SEQ[i]);
+}
+document.getElementById("qPrev").addEventListener("click",()=>stepFollow(-1));
+document.getElementById("qNext").addEventListener("click",()=>stepFollow(1));
 /* ============ PHOTO ============ */
 function takePhoto(){
   const scale=Math.min(2,4/DPR);
